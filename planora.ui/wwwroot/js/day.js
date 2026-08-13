@@ -1,0 +1,1 @@
+// day.js — işlevleri calendar.js'e taşındı (tik/sil/detay/taşıma)

@@ -1,0 +1,50 @@
+# Build results
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+!.vscode/tasks.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.nupkg.metadata
+*.snupkg
+packages/
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+
+# Publish output
+publish/
+.publish/
+
+# SQL / DB local files
+*.mdf
+*.ldf
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets / local config
+appsettings.Local.json
+appsettings.Development.json
+**/appsettings.Development.json

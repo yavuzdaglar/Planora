@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Planora</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app">
+        <!-- Sol panel: logo → mini takvim → blok oluşturucu → üretilen bloklar -->
+        <aside class="rail" id="mainRail">
+            <div class="rail-logo">
+                <span class="logo-dot"></span>
+                <h1>Planora</h1>
+                <button class="rail-toggle" id="railToggle" title="Paneli aç/kapat">◀</button>
+            </div>
+
+            <div class="rail-nav">
+                <a asp-controller="Calendar" asp-action="Day" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")" class="nav-item">
+                    <span class="nav-icon">◎</span> Bugün
+                </a>
+                <a asp-controller="Calendar" asp-action="Index" asp-route-view="month" class="nav-item">
+                    <span class="nav-icon">▦</span> Takvim
+                </a>
+                <a asp-controller="Tasks" asp-action="Index" class="nav-item">
+                    <span class="nav-icon">✓</span> Görevler
+                </a>
+            </div>
+
+            @await Component.InvokeAsync("_CalendarSidebar", new { selectedDate = ViewBag.SelectedDate ?? DateTime.Today })
+
+            <div class="block-builder">
+                <div class="sidebar-section-title">Blok Oluştur</div>
+                <label>Renk</label>
+                <div class="color-picker" id="builderColors">
+                    <button type="button" class="color-option" data-color="#22c55e" title="Yeşil" style="background:#22c55e"></button>
+                    <button type="button" class="color-option" data-color="#8b5cf6" title="Mor" style="background:#8b5cf6"></button>
+                    <button type="button" class="color-option" data-color="#3b82f6" title="Mavi" style="background:#3b82f6"></button>
+                    <button type="button" class="color-option" data-color="#f97316" title="Turuncu" style="background:#f97316"></button>
+                    <button type="button" class="color-option" data-color="#ef4444" title="Kırmızı" style="background:#ef4444"></button>
+                    <button type="button" class="color-option" data-color="#eab308" title="Sarı" style="background:#eab308"></button>
+                    <button type="button" class="color-option" data-color="#ec4899" title="Pembe" style="background:#ec4899"></button>
+                    <button type="button" class="color-option" data-color="#06b6d4" title="Camgöbeği" style="background:#06b6d4"></button>
+                    <button type="button" class="color-option" data-color="#a855f7" title="Lila" style="background:#a855f7"></button>
+                    <button type="button" class="color-option" data-color="#14b8a6" title="Turkuaz" style="background:#14b8a6"></button>
+                    <button type="button" class="color-option" data-color="#f43f5e" title="Gül" style="background:#f43f5e"></button>
+                    <button type="button" class="color-option" data-color="#facc15" title="Altın" style="background:#facc15"></button>
+                    <button type="button" class="color-option" data-color="#38bdf8" title="Gök mavisi" style="background:#38bdf8"></button>
+                    <button type="button" class="color-option" data-color="#fb923c" title="Şeftali" style="background:#fb923c"></button>
+                </div>
+                <label>Başlık</label>
+                <input type="text" id="builderTitle" placeholder="Toplantı, ders, spor..." maxlength="80" />
+                <label>Açıklama</label>
+                <textarea id="builderDesc" rows="2" placeholder="Detay (isteğe bağlı)"></textarea>
+                <label>Süre (dakika)</label>
+                <div class="duration-input">
+                    <input type="number" id="builderDuration" min="5" max="720" step="5" value="30" />
+                    <span>dk</span>
+                </div>
+                <button class="btn btn-primary builder-btn" id="buildBlockBtn">✦ Üret</button>
+            </div>
+
+            <div class="block-drafts">
+                <div class="sidebar-section-title">Oluşturulan Bloklar</div>
+                <div class="draft-list" id="draftList">
+                    <div class="draft-hint">Blok üretince buraya gelir, takvime sürükle.</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Panel kapalıyken görünen açma tuşu -->
+        <button class="rail-open-btn" id="railOpenBtn" title="Paneli aç">▶</button>
+
+        <div class="main-wrap">
+            <header class="topbar">
+                <div class="topbar-cals">
+                    <span class="cal-dot" style="background:#22c55e" title="Kişisel"></span>
+                    <span class="cal-dot" style="background:#8b5cf6" title="İş"></span>
+                    <span class="cal-dot" style="background:#3b82f6" title="Ders"></span>
+                    <span class="cal-dot" style="background:#f97316" title="Fitness"></span>
+                </div>
+                <div class="quick-command">
+                    <input type="text" placeholder="✨ Planora'ya bir şey sor..." id="quickCommandInput" />
+                    <kbd>Ctrl K</kbd>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn btn-ai" id="aiToggleBtn">✨ AI</button>
+                    <div class="user-card">
+                        <div class="avatar">YU</div>
+                        <div class="user-info">
+                            <strong>Yavuz User</strong>
+                            <span>yavuz@planora.com</span>
+                        </div>
+                    </div>
+                    <button class="theme-toggle" title="Tema değiştir">🌙</button>
+                </div>
+            </header>
+            <main class="content">
+                @RenderBody()
+            </main>
+        </div>
+
+        <!-- Sağda açılır kapanır AI paneli -->
+        <aside class="ai-panel" id="aiPanel">
+            <div class="ai-header">
+                <span class="ai-avatar">✨</span>
+                <div>
+                    <h2>Planora AI</h2>
+                    <p>Doğal dille haftanı planla</p>
+                </div>
+                <button class="btn btn-icon ai-close" id="aiCloseBtn">✕</button>
+            </div>
+            <div class="ai-chat" id="aiChat">
+                <div class="ai-msg">
+                    <p>Merhaba! Haftanı nasıl planlamamı istersin? Örneğin:</p>
+                    <em>"Cuma günü Analiz sınavım var. Her hafta içi 2 saat çalışmam lazım. .NET projesine her gün 1 saat ayırmak istiyorum. Spor Pzt-Çar-Cuma 18:00'de. Pazarı tamamen boş bırak."</em>
+                </div>
+            </div>
+            <div class="ai-plan-panel">
+                <div class="ai-plan-header">
+                    <h3>ÜRETİLEN PLAN</h3>
+                    <button class="btn btn-outline" id="aiApplyBtn" style="display:none">✓ Planı Uygula</button>
+                </div>
+                <div class="ai-summary" id="aiSummary" style="display:none"></div>
+                <div class="ai-plan-list" id="aiPlanList">
+                    <div class="empty-state">
+                        <p>Henüz plan yok.</p>
+                        <span>Planora'ya haftanı anlat, canlı takvim burada oluşsun.</span>
+                    </div>
+                </div>
+                <div class="ai-conflicts" id="aiConflicts" style="display:none"></div>
+            </div>
+            <div class="ai-input">
+                <textarea id="aiPrompt" rows="2" placeholder="Planı anlat..."></textarea>
+                <button class="btn btn-primary" id="aiSendBtn">Planla</button>
+            </div>
+            <input type="hidden" id="aiUserId" value="5" />
+        </aside>
+    </div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/ai.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

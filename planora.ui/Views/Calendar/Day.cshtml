@@ -1,0 +1,111 @@
+@model Planora.UI.Models.CalendarPageViewModel
+@{
+    ViewData["Title"] = "Gün";
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+}
+
+<div class="calendar-page day-page">
+    <header class="calendar-header">
+        <div class="header-left">
+            <h2 class="month-title">@Model.SelectedDate.ToString("dddd, dd MMMM yyyy", tr)</h2>
+        </div>
+        <div class="header-controls">
+            <a class="btn btn-icon" asp-controller="Calendar" asp-action="Day" asp-route-date="@Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd")">‹</a>
+            <a class="btn btn-outline" asp-controller="Calendar" asp-action="Day" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")">Bugün</a>
+            <a class="btn btn-icon" asp-controller="Calendar" asp-action="Day" asp-route-date="@Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd")">›</a>
+        </div>
+        <div class="zoom-control" title="Saat sütunu yakınlaştır / uzaklaştır">
+            <button type="button" id="zoomOutBtn">−</button>
+            <span class="zoom-value" id="zoomLabel"></span>
+            <button type="button" id="zoomInBtn">＋</button>
+        </div>
+        <div class="view-switcher">
+            <a asp-controller="Calendar" asp-action="Index" asp-route-view="month" class="vs-btn">Ay</a>
+            <a asp-controller="Calendar" asp-action="Index" asp-route-view="week" class="vs-btn">Hafta</a>
+            <a asp-controller="Calendar" asp-action="Day" class="vs-btn active">Gün</a>
+        </div>
+    </header>
+
+    <div class="day-timeline" id="dayTimeline">
+        @{
+            var morning = Model.Blocks.Where(b => b.StartTime < TimeSpan.FromHours(12)).OrderBy(b => b.StartTime).ToList();
+            var evening = Model.Blocks.Where(b => b.StartTime >= TimeSpan.FromHours(12)).OrderBy(b => b.StartTime).ToList();
+        }
+        <div class="day-half">
+            <div class="time-col" id="dayTimeCol"></div>
+            <div class="day-line">
+                @for (var h = 0; h < 12; h++)
+                {
+                    <div class="timeline-slot" data-date="@Model.SelectedDate.ToString("yyyy-MM-dd")" data-hour="@h"></div>
+                }
+                @foreach (var b in morning)
+                {
+                    <div class="day-block" style="background:@b.Color" data-id="@b.Id"
+                         data-top-min="@b.StartTime.TotalMinutes" data-dur-min="@b.DurationMinutes"
+                         data-title="@b.Title" data-desc="@b.Description" data-date="@b.Date.ToString("yyyy-MM-dd")"
+                         data-start="@b.StartTime.ToString("hh\\:mm")" data-end="@b.EndTime.ToString("hh\\:mm")"
+                         data-priority="@b.Priority" data-status="@b.Status">
+                        <div class="day-block-inner">
+                            <strong>@b.Title</strong>
+                            @if (!string.IsNullOrEmpty(b.Description))
+                            {
+                                <span class="block-desc">@b.Description</span>
+                            }
+                            <span class="block-time">@b.StartTime.ToString("hh\\:mm") — @b.EndTime.ToString("hh\\:mm")</span>
+                        </div>
+                        <button type="button" class="block-tick" title="Tamamla">✓</button>
+                        <button type="button" class="block-delete" title="Sil"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="day-half late">
+            <div class="time-col"></div>
+            <div class="day-line">
+                @for (var h = 12; h < 24; h++)
+                {
+                    <div class="timeline-slot" data-date="@Model.SelectedDate.ToString("yyyy-MM-dd")" data-hour="@h"></div>
+                }
+                @foreach (var b in evening)
+                {
+                    <div class="day-block" style="background:@b.Color" data-id="@b.Id"
+                         data-top-min="@b.StartTime.TotalMinutes" data-dur-min="@b.DurationMinutes"
+                         data-title="@b.Title" data-desc="@b.Description" data-date="@b.Date.ToString("yyyy-MM-dd")"
+                         data-start="@b.StartTime.ToString("hh\\:mm")" data-end="@b.EndTime.ToString("hh\\:mm")"
+                         data-priority="@b.Priority" data-status="@b.Status">
+                        <div class="day-block-inner">
+                            <strong>@b.Title</strong>
+                            @if (!string.IsNullOrEmpty(b.Description))
+                            {
+                                <span class="block-desc">@b.Description</span>
+                            }
+                            <span class="block-time">@b.StartTime.ToString("hh\\:mm") — @b.EndTime.ToString("hh\\:mm")</span>
+                        </div>
+                        <button type="button" class="block-tick" title="Tamamla">✓</button>
+                        <button type="button" class="block-delete" title="Sil"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="blockDetailModal" style="display:none">
+    <div class="modal">
+        <h3 id="detailTitle">Blok Detayı</h3>
+        <div class="detail-rows">
+            <div><label>Zaman</label><span id="detailTime">—</span></div>
+            <div><label>Öncelik</label><span id="detailPriority">—</span></div>
+            <div><label>Durum</label><span id="detailStatus">—</span></div>
+            <div><label>Açıklama</label><span id="detailDesc">—</span></div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-primary" onclick="closeBlockDetailModal()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/calendar.js" asp-append-version="true"></script>
+    <script src="~/js/day.js" asp-append-version="true"></script>
+}

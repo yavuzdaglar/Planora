@@ -1,0 +1,133 @@
+@model Planora.UI.Models.CalendarPageViewModel
+@{
+    ViewData["Title"] = "Takvim";
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+}
+
+<div class="calendar-page">
+    <header class="calendar-header">
+        <div class="header-left">
+            <h2 class="month-title">@Model.SelectedDate.ToString("MMMM yyyy", tr)</h2>
+            <span class="week-range">@Model.WeekStart.ToString("dd MMM", tr) – @Model.WeekEnd.ToString("dd MMM", tr)</span>
+        </div>
+        <div class="header-controls">
+            <button class="btn btn-icon" onclick="navigateCalendar('prev')">‹</button>
+            <button class="btn btn-outline" onclick="navigateCalendar('today')">Bugün</button>
+            <button class="btn btn-icon" onclick="navigateCalendar('next')">›</button>
+        </div>
+        @if (Model.View == "week")
+        {
+            <div class="zoom-control" title="Saat sütunu yakınlaştır / uzaklaştır">
+                <button type="button" id="zoomOutBtn">−</button>
+                <span class="zoom-value" id="zoomLabel"></span>
+                <button type="button" id="zoomInBtn">＋</button>
+            </div>
+        }
+        <div class="view-switcher">
+            <a asp-controller="Calendar" asp-action="Index" asp-route-view="month" class="vs-btn @(Model.View == "month" ? "active" : "")">Ay</a>
+            <a asp-controller="Calendar" asp-action="Index" asp-route-view="week" class="vs-btn @(Model.View == "week" ? "active" : "")">Hafta</a>
+            <a asp-controller="Calendar" asp-action="Day" class="vs-btn @(Model.View == "day" ? "active" : "")">Gün</a>
+        </div>
+    </header>
+
+    <div class="calendar-body">
+        <div class="calendar-grid-wrap">
+            <div class="weekdays-row">
+                @foreach (var day in Model.DayBlocks)
+                {
+                    var isToday = day.Date.Date == DateTime.Today.Date;
+                    <div class="weekday-label @(isToday ? "today" : "")">@day.Date.ToString("dddd", tr)</div>
+                }
+            </div>
+
+            @if (Model.View == "month")
+            {
+                <div class="month-grid">
+                    @{
+                        var firstOfMonth = new DateTime(Model.SelectedDate.Year, Model.SelectedDate.Month, 1);
+                        var gridStart = firstOfMonth.AddDays(-((int)firstOfMonth.DayOfWeek + 6) % 7);
+                        var weekStart = Model.SelectedDate.Date.AddDays(-((int)Model.SelectedDate.DayOfWeek + 6) % 7);
+                        var weekEnd = weekStart.AddDays(6);
+                    }
+                    @for (var i = 0; i < 42; i++)
+                    {
+                        var d = gridStart.AddDays(i);
+                        var blocks = Model.Blocks.Where(b => b.Date.Date == d.Date).OrderBy(b => b.StartTime).Take(4).ToList();
+                        var inMonth = d.Month == Model.SelectedDate.Month;
+                        var isToday = d.Date == DateTime.Today.Date;
+                        var inSelectedWeek = d.Date >= weekStart && d.Date <= weekEnd;
+                        <div class="day-cell @(inMonth ? "" : "out") @(isToday ? "today" : "") @(inSelectedWeek ? "week-highlight" : "")"
+                             data-date="@d.ToString("yyyy-MM-dd")"
+                             onclick="location.href='@Url.Action("Day", "Calendar", new { date = d.ToString("yyyy-MM-dd") })'">
+                            <span class="day-num">@d.Day</span>
+                            @foreach (var b in blocks)
+                            {
+                                <span class="block-pill @(b.Status == 2 ? "done" : "")" style="background:@b.Color;color:#fff" data-id="@b.Id"
+                                      data-title="@b.Title" data-desc="@b.Description" data-date="@d.ToString("yyyy-MM-dd")"
+                                      data-start="@b.StartTime.ToString("hh\\:mm")" data-end="@b.EndTime.ToString("hh\\:mm")"
+                                      data-priority="@b.Priority" data-status="@b.Status">
+                                    <span class="pill-text">@b.StartTime.ToString("hh\\:mm") @b.Title</span>
+                                    <button type="button" class="block-tick" title="Tamamla">✓</button>
+                                    <button type="button" class="block-delete" title="Sil"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                                </span>
+                            }
+                            @if (Model.Blocks.Count(bb => bb.Date.Date == d.Date) > 4)
+                            {
+                                <span class="more-link">+@(Model.Blocks.Count(bb => bb.Date.Date == d.Date) - 4) daha</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (Model.View == "week")
+            {
+                <div class="week-grid" id="weekGrid">
+                    <div class="time-col" id="weekTimeCol"></div>
+                    @foreach (var day in Model.DayBlocks)
+                    {
+                        var isToday = day.Date.Date == DateTime.Today.Date;
+                        <div class="day-col @(isToday ? "today" : "")">
+                            @for (var h = 0; h < 24; h++)
+                            {
+                                <div class="time-slot" data-date="@day.Date.ToString("yyyy-MM-dd")" data-hour="@h"></div>
+                            }
+                            @foreach (var b in day.Blocks)
+                            {
+                                <div class="week-block" style="background:@b.Color" data-id="@b.Id"
+                                     data-top-min="@b.StartTime.TotalMinutes" data-dur-min="@b.DurationMinutes"
+                                     data-title="@b.Title" data-desc="@b.Description" data-date="@b.Date.ToString("yyyy-MM-dd")"
+                                     data-start="@b.StartTime.ToString("hh\\:mm")" data-end="@b.EndTime.ToString("hh\\:mm")"
+                                     data-priority="@b.Priority" data-status="@b.Status">
+                                    <strong>@b.Title</strong>
+                                    <span>@b.StartTime.ToString("hh\\:mm") — @b.EndTime.ToString("hh\\:mm")</span>
+                                    <button type="button" class="block-tick" title="Tamamla">✓</button>
+                                    <button type="button" class="block-delete" title="Sil"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="blockDetailModal" style="display:none">
+    <div class="modal">
+        <h3 id="detailTitle">Blok Detayı</h3>
+        <div class="detail-rows">
+            <div><label>Zaman</label><span id="detailTime">—</span></div>
+            <div><label>Öncelik</label><span id="detailPriority">—</span></div>
+            <div><label>Durum</label><span id="detailStatus">—</span></div>
+            <div><label>Açıklama</label><span id="detailDesc">—</span></div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-primary" onclick="closeBlockDetailModal()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/calendar.js" asp-append-version="true"></script>
+    <script src="~/js/day.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,48 @@
+@model Planora.UI.Models.TodayDashboardViewModel
+@{
+    ViewData["Title"] = "Görevler";
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+}
+
+<div class="tasks-page">
+    <h2 class="page-title">İyi günler, Yavuz 👋</h2>
+    <p class="page-subtitle">İşte bugünün planı.</p>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <span class="stat-value">@Model.CompletedCount / @Model.TotalCount</span>
+            <span class="stat-label">Tamamlandı</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">@((Model.FocusMinutes / 60).ToString("0.0"))s</span>
+            <span class="stat-label">Odak süresi</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">@Math.Max(0, Model.TotalCount - Model.CompletedCount)</span>
+            <span class="stat-label">Kalan görev</span>
+        </div>
+    </div>
+
+    <div class="coming-up">
+        <h3>Sıradaki</h3>
+        @if (Model.ComingUp.Count == 0)
+        {
+            <div class="empty-state">
+                <p>Bugün hiç görev yok.</p>
+                <span>Takvimin boş. 🎉</span>
+                <button class="btn btn-primary" onclick="openAiPanel()">✨ AI'a günümü planlat</button>
+            </div>
+        }
+        else
+        {
+            @foreach (var b in Model.ComingUp)
+            {
+                <div class="next-task">
+                    <span class="next-time">@b.StartTime.ToString("hh\\:mm")</span>
+                    <span class="next-dot" style="background:@b.Color"></span>
+                    <strong>@b.Title</strong>
+                </div>
+            }
+        }
+    </div>
+</div>

@@ -1,0 +1,32 @@
+@{
+    var selected = (DateTime)ViewBag.SelectedDate;
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+    var first = new DateTime(selected.Year, selected.Month, 1);
+    var start = first.AddDays(-((int)first.DayOfWeek + 6) % 7);
+    var weekStart = selected.Date.AddDays(-((int)selected.DayOfWeek + 6) % 7);
+    var weekEnd = weekStart.AddDays(6);
+}
+
+<div class="mini-calendar">
+    <div class="mini-cal-head">
+        <strong>@selected.ToString("MMMM yyyy", tr)</strong>
+    </div>
+    <div class="mini-cal-grid">
+        @foreach (var dayName in new[] { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" })
+        {
+            <span class="mini-cal-dow">@dayName</span>
+        }
+        @for (var i = 0; i < 42; i++)
+        {
+            var d = start.AddDays(i);
+            var isSelected = d.Date == selected.Date;
+            var isToday = d.Date == DateTime.Today.Date;
+            var inMonth = d.Month == selected.Month;
+            var inSelectedWeek = d.Date >= weekStart && d.Date <= weekEnd;
+            <a class="mini-cal-day @(inMonth ? "" : "muted") @(isSelected ? "selected" : "") @(isToday ? "today" : "") @(inSelectedWeek ? "week-highlight" : "")"
+               asp-controller="Calendar" asp-action="Day" asp-route-date="@d.ToString("yyyy-MM-dd")">
+                @d.Day
+            </a>
+        }
+    </div>
+</div>
